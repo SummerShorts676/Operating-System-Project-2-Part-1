@@ -18,16 +18,41 @@ load_dotenv()
 
 USE_MANAGED_IDENTITY = os.getenv("USE_MANAGED_IDENTITY", "false").lower() == "true"
 
-if USE_MANAGED_IDENTITY:
-    from azure.identity import DefaultAzureCredential
-    credential = DefaultAzureCredential()
-    blob_service_client = BlobServiceClient(
-        account_url=f"https://{os.getenv('STORAGE_ACCOUNT_NAME')}.blob.core.windows.net",
-        credential=credential
-    )
-else:
-    conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-    blob_service_client = BlobServiceClient.from_connection_string(conn_str)
+# Create BlobServiceClient lazily to avoid raising exceptions at import time which
+# can prevent the Functions host from starting when environment variables are
+# missing in the deployment environment. This also keeps cold-start fast when
+# the client is only needed for certain routes.
+blob_service_client = None
+
+
+def get_blob_service_client():
+    """Return a cached BlobServiceClient or create one. Returns None if unable
+    to create (for example when AZURE_STORAGE_CONNECTION_STRING is not set).
+    """
+    global blob_service_client
+    if blob_service_client:
+        return blob_service_client
+    try:
+        if USE_MANAGED_IDENTITY:
+            # Import lazily so missing azure.identity in some environments doesn't
+            # break the module import.
+            from azure.identity import DefaultAzureCredential
+
+            credential = DefaultAzureCredential()
+            blob_service_client = BlobServiceClient(
+                account_url=f"https://{os.getenv('STORAGE_ACCOUNT_NAME')}.blob.core.windows.net",
+                credential=credential,
+            )
+        else:
+            conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+            if not conn_str:
+                # Caller should handle a None return value and respond appropriately.
+                return None
+            blob_service_client = BlobServiceClient.from_connection_string(conn_str)
+        return blob_service_client
+    except Exception:
+        logging.exception("Failed to initialize BlobServiceClient")
+        return None
 
 
 app = func.FunctionApp()
@@ -83,7 +108,17 @@ def detDiet(req: func.HttpRequest) -> func.HttpResponse:
     blob_name = "All_Diets.csv"
 
     try:
-        container_client = blob_service_client.get_container_client(container)
+        bsc = get_blob_service_client()
+        if not bsc:
+            # Return a clear error if storage is not configured in the environment.
+            logging.error("BlobServiceClient not configured; check AZURE_STORAGE_CONNECTION_STRING or USE_MANAGED_IDENTITY setting")
+            return func.HttpResponse(
+                "Storage is not configured. Please set AZURE_STORAGE_CONNECTION_STRING or enable managed identity (USE_MANAGED_IDENTITY=true).",
+                status_code=500,
+                headers=CORS_HEADERS,
+            )
+
+        container_client = bsc.get_container_client(container)
         blob_client = container_client.get_blob_client(blob_name)
 
         stream = blob_client.download_blob()
