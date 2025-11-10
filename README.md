@@ -28,3 +28,5 @@ This is the repository for the code for Project 2 Part 1
 2. Cd into proper directory `cd {path-to}/my-app`
 2. Run `npm install`.
 3. Run `npm run dev`.
+
+Test here
