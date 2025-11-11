@@ -198,7 +198,7 @@ export default function Page() {
     async function FetchDataset() {
       try {
         const start = performance.now();
-        const response = await fetch("http://localhost:7071/api/FetchDataset");
+        const response = await fetch("https://get-data-exaxb3e2dcddc6h8.canadacentral-01.azurewebsites.net/api/fetchdataset");
         const data = await response.json();
         const end = performance.now();
         const duration = end - start;
