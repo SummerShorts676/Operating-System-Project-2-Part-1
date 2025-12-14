@@ -198,16 +198,19 @@ export default function Page() {
     async function FetchDataset() {
       try {
         const start = performance.now();
-        const response = await fetch("https://get-data-exaxb3e2dcddc6h8.canadacentral-01.azurewebsites.net/api/fetchdataset");
-        const data = await response.json();
+        const response = await fetch("http://localhost:5000/FetchDataset?per_page=1000");
+        const result = await response.json();
         const end = performance.now();
         const duration = end - start;
-        console.log(data);
-        setData(data);
+        console.log(result);
+        // Handle new API response structure with pagination
+        const dataArray = result.data || result;
+        setData(Array.isArray(dataArray) ? dataArray : []);
         setFunctionExecMs(duration);
         setLastFetchTime(new Date().toISOString());
       } catch (error) {
         console.error("Error fetching dataset:", error);
+        setData([]);
       }
     }
 
