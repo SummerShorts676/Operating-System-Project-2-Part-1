@@ -1,3 +1,4 @@
+// Password hashing and verification utilities using bcrypt
 import bcrypt from 'bcrypt'
 
 // Hash the password using bcrypt

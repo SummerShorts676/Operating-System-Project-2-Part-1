@@ -1,3 +1,4 @@
+// Database connection helper for MSSQL Azure database
 import sql from 'mssql'
 
 const config = {

@@ -1,13 +1,18 @@
+// GET/PUT/DELETE API route for a specific user by ID
 import { getConnection } from '../../../../lib/db'
 import { hashPassword } from '../../../../lib/password'
 
+// ===== GET: Retrieve user by ID =====
 export async function GET(request, { params }) {
     try {
+        // Validate and parse ID
         const { id } = await params
         const parsedId = Number.parseInt(id, 10)
         if (Number.isNaN(parsedId)) {
             return Response.json({ error: 'Invalid id. Must be an integer.' }, { status: 400 })
         }
+        
+        // Query user by ID
         const pool = await getConnection()
         const result = await pool.request()
             .input('id', parsedId)
@@ -24,13 +29,17 @@ export async function GET(request, { params }) {
     }
 }
 
+// ===== PUT: Update user by ID =====
 export async function PUT(request, { params }) {
     try {
+        // Validate and parse ID
         const { id } = await params
         const parsedId = Number.parseInt(id, 10)
         if (Number.isNaN(parsedId)) {
             return Response.json({ error: 'Invalid id. Must be an integer.' }, { status: 400 })
         }
+        
+        // Parse update data
         const { firstname, lastname, email, password } = await request.json()
         
         const pool = await getConnection()
@@ -68,13 +77,17 @@ export async function PUT(request, { params }) {
     }
 }
 
+// ===== DELETE: Remove user by ID =====
 export async function DELETE(request, { params }) {
     try {
+        // Validate and parse ID
         const { id } = await params
         const parsedId = Number.parseInt(id, 10)
         if (Number.isNaN(parsedId)) {
             return Response.json({ error: 'Invalid id. Must be an integer.' }, { status: 400 })
         }
+        
+        // Delete user from database
         const pool = await getConnection()
         const result = await pool.request()
             .input('id', parsedId)

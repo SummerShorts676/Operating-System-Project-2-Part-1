@@ -1,11 +1,14 @@
+// Protected dashboard page - displays diet data and nutrition information for authenticated users
 "use client";
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function Page() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [dietType, setDietType] = useState("all");
@@ -18,19 +21,38 @@ export default function Page() {
   const [functionExecMs, setFunctionExecMs] = useState<number | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<string | null>(null);
 
-  // Load user from localStorage on mount
+  // Check session or localStorage on mount
   useEffect(() => {
+    if (status === "loading") return; // Wait for session to load
+    
+    // For OAuth: use NextAuth session directly
+    if (session) {
+      const oauthUser = {
+        id: 404,
+        firstname: session.user?.name || "",
+        lastname: null,
+        email: session.user?.email || ""
+      };
+      setUser(oauthUser);
+      return;
+    }
+    
+    // For email/password: fall back to localStorage
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
       router.push('/');
       return;
     }
     setUser(JSON.parse(storedUser));
-  }, [router]);
+  }, [router, session, status]);
 
   // ECharts wrapper (client-only)
-  // dynamic import but cast to any so we can call with option prop without strict typing issues
+  // ===== Chart and Visualization Functions =====
+
+  // Dynamic import but cast to any so we can call with option prop without strict typing issues
   const ReactECharts: any = dynamic(() => import("echarts-for-react"), { ssr: false }) as any;
+
+  // ===== Data Parsing and Processing Helper Functions =====
 
   // Helper: parse numeric value from fields like "Protein(g)"
   function parseNumeric(val: any): number | null {
@@ -83,6 +105,7 @@ export default function Page() {
     };
   }
 
+  // Build heatmap visualization showing nutrient averages by diet type
   function buildHeatmapOption() {
     const src = data;
     const nutrientKeys = ["Protein(g)", "Carbs(g)", "Fat(g)"];
@@ -106,6 +129,7 @@ export default function Page() {
     };
   }
 
+  // Build pie chart showing count distribution of diet types
   function buildPieOption() {
     const src = data;
     const counts: Record<string, number> = {};
@@ -120,10 +144,14 @@ export default function Page() {
     };
   }
 
+  // Capitalize first letter of string
   function capitalizeFirstLetter(string: string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
   }
 
+  // ===== Nutrition Analysis Functions =====
+
+  // Extract and display nutritional information for selected items
   function getNutritionalInsights() {
     const selectedObjects = selectedItems
       .map((i) => searchResults[i])

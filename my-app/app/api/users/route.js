@@ -1,6 +1,8 @@
+// GET/POST API route for users - retrieves all users or creates a new user
 import { getConnection } from '../../../lib/db'
 import { hashPassword } from '../../../lib/password'
 
+// ===== GET: Retrieve all users =====
 export async function GET() {
     try {
         const pool = await getConnection()
@@ -18,8 +20,10 @@ export async function GET() {
     }
 }
 
+// ===== POST: Create new user =====
 export async function POST(request) {
     try {
+        // Validate input
         const { firstname, lastname, email, password } = await request.json()
         
         if (!firstname || !lastname || !email || !password) {
@@ -33,6 +37,7 @@ export async function POST(request) {
         // Hash the password
         const hashedPassword = await hashPassword(password)
         
+        // Insert user into database
         const pool = await getConnection()
         const result = await pool.request()
             .input('firstname', firstname)

@@ -1,3 +1,4 @@
+// User registration page - allows new users to create an account
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,14 +13,17 @@ export default function RegisterPage() {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ===== Registration Submit Handler =====
   async function register() {
     setMessage("");
+    // Validate all fields are filled
     if (!firstname || !lastname || !email || !password) {
       setMessage("Please fill in all fields");
       return;
     }
     setIsSubmitting(true);
     try {
+      // Send registration request to API
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,12 +49,13 @@ export default function RegisterPage() {
   return (
     <div className="bg-gray-100 text-white* flex flex-col items-center justify-center min-h-screen">
       <div>
-        {/* Title */}
+        {/* ===== Registration Form Header ===== */}
         <div className="bg-blue-600 text-7xl shadow-md py-5 rounded-t-2xl font-semibold">
           <h1 className="px-10">Register Page</h1>
         </div>
-        {/* Form */}
+        {/* ===== Registration Form Inputs ===== */}
         <div className="flex flex-col bg-white w-full text-black shadow-md gap-6 px-10 py-10">
+          {/* ===== Personal Information Inputs ===== */}
           {/* Row 1: First & Last Name */}
           <div className="flex gap-6 w-full">
             <div className="flex flex-col w-full">
@@ -97,9 +102,11 @@ export default function RegisterPage() {
               />
             </div>
           </div>
+          {/* ===== Error/Success Message Display ===== */}
           <div className="font-semibold text-red-600 p-0 m-0 h-10 flex justify-center items-center">
             {message}
           </div>
+          {/* ===== Register and Back Buttons ===== */}
           <div className="flex items-center justify-center m-auto gap-10">
             <button
               onClick={() => {
