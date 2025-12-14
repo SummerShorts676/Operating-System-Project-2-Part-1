@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import csv
 import os
@@ -21,9 +21,6 @@ logger = logging.getLogger(__name__)
 
 # Path to the CSV file
 CSV_FILE_PATH = os.path.join(os.path.dirname(__file__), 'data', 'All_Diets.csv')
-
-# Path to Next.js build output
-NEXTJS_BUILD_PATH = os.path.join(os.path.dirname(__file__), '..', 'my-app', 'out')
 
 # Initialize cache manager
 cache_manager = CacheManager()
@@ -64,7 +61,7 @@ def get_dataset():
 def fetch_dataset():
     """
     Fetch and return the cleaned diet data as JSON.
-    Supports filtering, searching, and pagination.
+    Supports filtering and searching.
     
     Query parameters:
     - diet_type: Filter by diet type (e.g., 'paleo')
@@ -78,8 +75,6 @@ def fetch_dataset():
     - max_fat: Maximum fat in grams
     - min_calories: Minimum calories
     - max_calories: Maximum calories
-    - page: Page number (default: 1)
-    - per_page: Items per page (default: 20, max: 100)
     - sort_by: Sort field (protein, carbs, fat, calories, recipe_name)
     - sort_order: Sort order (asc, desc)
     """
@@ -173,36 +168,17 @@ def fetch_dataset():
                 ascending=ascending
             )
         
-        # Pagination
-        page = max(1, request.args.get('page', 1, type=int))
-        per_page = min(100, max(1, request.args.get('per_page', 20, type=int)))
-        
-        total_items = len(df_filtered)
-        total_pages = (total_items + per_page - 1) // per_page  # Ceiling division
-        
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        
-        df_page = df_filtered.iloc[start_idx:end_idx]
-        
         # Drop the search helper column before returning
-        if 'Recipe_name_search' in df_page.columns:
-            df_page = df_page.drop(columns=['Recipe_name_search'])
+        if 'Recipe_name_search' in df_filtered.columns:
+            df_filtered = df_filtered.drop(columns=['Recipe_name_search'])
         
         # Convert to records
-        records = df_page.to_dict('records')
+        records = df_filtered.to_dict('records')
         
         # Prepare response
         response = {
             'data': records,
-            'pagination': {
-                'page': page,
-                'per_page': per_page,
-                'total_items': total_items,
-                'total_pages': total_pages,
-                'has_next': page < total_pages,
-                'has_prev': page > 1
-            },
+            'total_items': len(records),
             'filters_applied': {
                 'diet_type': diet_type or None,
                 'cuisine_type': cuisine_type or None,
@@ -220,7 +196,7 @@ def fetch_dataset():
             }
         }
         
-        logger.info(f"Returning {len(records)} recipes (page {page}/{total_pages})")
+        logger.info(f"Returning {len(records)} recipes")
         return jsonify(response), 200
     
     except Exception as e:
@@ -353,41 +329,6 @@ def clear_cache():
     except Exception as e:
         logger.exception("Error clearing cache")
         return jsonify({'error': str(e)}), 500
-
-
-# Serve Next.js static files
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_nextjs(path):
-    """Serve Next.js static files."""
-    # Check if Next.js build directory exists
-    if not os.path.exists(NEXTJS_BUILD_PATH):
-        return jsonify({
-            'error': 'Frontend not built',
-            'message': 'Please run "npm run build" in the my-app directory first'
-        }), 404
-    
-    # If path is empty, serve index.html
-    if path == '' or path == 'index.html':
-        return send_from_directory(NEXTJS_BUILD_PATH, 'index.html')
-    
-    # Try to serve the requested file
-    file_path = os.path.join(NEXTJS_BUILD_PATH, path)
-    
-    # If it's a directory or file doesn't exist, try index.html
-    if os.path.isdir(file_path):
-        index_path = os.path.join(file_path, 'index.html')
-        if os.path.exists(index_path):
-            return send_from_directory(file_path, 'index.html')
-    
-    # Try to serve the file
-    if os.path.exists(file_path):
-        directory = os.path.dirname(file_path)
-        filename = os.path.basename(file_path)
-        return send_from_directory(directory, filename)
-    
-    # If nothing found, serve index.html for client-side routing
-    return send_from_directory(NEXTJS_BUILD_PATH, 'index.html')
 
 
 if __name__ == '__main__':

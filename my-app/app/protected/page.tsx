@@ -67,7 +67,7 @@ export default function Page() {
 
   // Build echarts options from available data (use searchResults if filtered)
   function buildBarOption() {
-    const src = data;
+    const src = Array.isArray(data) ? data : [];
     const groups: Record<string, number[]> = {};
     src.forEach((item) => {
       const diet = (item.Diet_type || "Unknown").toString();
@@ -90,7 +90,7 @@ export default function Page() {
   }
 
   function buildScatterOption() {
-    const src = data;
+    const src = Array.isArray(data) ? data : [];
     const points: Array<number[]> = [];
     src.forEach((item) => {
       const p = parseNumeric(item["Protein(g)"]);
@@ -107,7 +107,7 @@ export default function Page() {
 
   // Build heatmap visualization showing nutrient averages by diet type
   function buildHeatmapOption() {
-    const src = data;
+    const src = Array.isArray(data) ? data : [];
     const nutrientKeys = ["Protein(g)", "Carbs(g)", "Fat(g)"];
     const diets = Array.from(new Set(src.map((s) => (s.Diet_type || 'Unknown').toString())));
     const dataArr: Array<[number, number, number]> = [];
@@ -131,7 +131,7 @@ export default function Page() {
 
   // Build pie chart showing count distribution of diet types
   function buildPieOption() {
-    const src = data;
+    const src = Array.isArray(data) ? data : [];
     const counts: Record<string, number> = {};
     src.forEach((item) => {
       const d = (item.Diet_type || 'Unknown').toString();
@@ -239,11 +239,12 @@ export default function Page() {
     async function FetchDataset() {
       try {
         const start = performance.now();
-        const response = await fetch("http://localhost:5000/FetchDataset?per_page=1000");
+        const response = await fetch("http://localhost:5000/FetchDataset");
         const result = await response.json();
         const end = performance.now();
         const duration = end - start;
-        // Handle new API response structure with pagination
+        console.log("API Response:", result);
+        // Handle new API response structure
         const dataArray = result.data || result;
         setData(Array.isArray(dataArray) ? dataArray : []);
         setFunctionExecMs(duration);
@@ -338,45 +339,51 @@ export default function Page() {
       <div className="container mx-auto p-6 pt-0">
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">Explore Nutritional Insights</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-4 shadow-lg rounded-lg">
-              <h3 className="font-semibold">Bar Chart</h3>
-              <p className="text-sm text-gray-600">
-                Average macronutrient content by diet type.
-              </p>
-              <div className="w-full h-48">
-                <ReactECharts option={buildBarOption()} style={{ margin: '-10px' ,height: '130%', width: '100%' }} />
-              </div>
+          {data.length === 0 ? (
+            <div className="bg-white p-8 shadow-lg rounded-lg text-center">
+              <p className="text-gray-600">Loading data...</p>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-4 shadow-lg rounded-lg">
+                <h3 className="font-semibold">Bar Chart</h3>
+                <p className="text-sm text-gray-600">
+                  Average macronutrient content by diet type.
+                </p>
+                <div className="w-full h-48">
+                  <ReactECharts option={buildBarOption()} style={{ margin: '-10px' ,height: '130%', width: '100%' }} />
+                </div>
+              </div>
 
-            <div className="bg-white p-4 shadow-lg rounded-lg">
-              <h3 className="font-semibold">Scatter Plot</h3>
-              <p className="text-sm text-gray-600">
-                Nutrient relationships (e.g., protein vs carbs).
-              </p>
-              <div className="w-full h-48">
-                <ReactECharts option={buildScatterOption()} style={{ margin: '-10px' ,height: '130%', width: '100%' }} />
+              <div className="bg-white p-4 shadow-lg rounded-lg">
+                <h3 className="font-semibold">Scatter Plot</h3>
+                <p className="text-sm text-gray-600">
+                  Nutrient relationships (e.g., protein vs carbs).
+                </p>
+                <div className="w-full h-48">
+                  <ReactECharts option={buildScatterOption()} style={{ margin: '-10px' ,height: '130%', width: '100%' }} />
+                </div>
               </div>
-            </div>
 
-            <div className="bg-white p-4 shadow-lg rounded-lg">
-              <h3 className="font-semibold">Heatmap</h3>
-              <p className="text-sm text-gray-600">Nutrient correlations.</p>
-              <div className="w-full h-48">
-                <ReactECharts option={buildHeatmapOption()} style={{ height: '130%', width: '100%' }} />
+              <div className="bg-white p-4 shadow-lg rounded-lg">
+                <h3 className="font-semibold">Heatmap</h3>
+                <p className="text-sm text-gray-600">Nutrient correlations.</p>
+                <div className="w-full h-48">
+                  <ReactECharts option={buildHeatmapOption()} style={{ height: '130%', width: '100%' }} />
+                </div>
               </div>
-            </div>
 
-            <div className="bg-white p-4 shadow-lg rounded-lg">
-              <h3 className="font-semibold">Pie Chart</h3>
-              <p className="text-sm text-gray-600">
-                Recipe distribution by diet type.
-              </p>
-              <div className="w-full h-48">
-                <ReactECharts option={buildPieOption()} style={{ height: '110%', width: '100%' }} />
+              <div className="bg-white p-4 shadow-lg rounded-lg">
+                <h3 className="font-semibold">Pie Chart</h3>
+                <p className="text-sm text-gray-600">
+                  Recipe distribution by diet type.
+                </p>
+                <div className="w-full h-48">
+                  <ReactECharts option={buildPieOption()} style={{ height: '110%', width: '100%' }} />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </section>
 
         <section className="mb-8">
