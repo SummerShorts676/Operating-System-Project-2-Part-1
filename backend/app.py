@@ -173,17 +173,23 @@ def fetch_dataset():
                 ascending=ascending
             )
         
-        # Pagination
+        # Pagination (optional - if per_page=0 or not specified, return all)
         page = max(1, request.args.get('page', 1, type=int))
-        per_page = min(100, max(1, request.args.get('per_page', 20, type=int)))
+        per_page = request.args.get('per_page', 0, type=int)
         
         total_items = len(df_filtered)
-        total_pages = (total_items + per_page - 1) // per_page  # Ceiling division
         
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        
-        df_page = df_filtered.iloc[start_idx:end_idx]
+        # If per_page is 0 or negative, return all items
+        if per_page <= 0:
+            df_page = df_filtered
+            total_pages = 1
+            page = 1
+        else:
+            per_page = max(1, per_page)
+            total_pages = (total_items + per_page - 1) // per_page  # Ceiling division
+            start_idx = (page - 1) * per_page
+            end_idx = start_idx + per_page
+            df_page = df_filtered.iloc[start_idx:end_idx]
         
         # Drop the search helper column before returning
         if 'Recipe_name_search' in df_page.columns:

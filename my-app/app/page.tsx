@@ -198,7 +198,7 @@ export default function Page() {
     async function FetchDataset() {
       try {
         const start = performance.now();
-        const response = await fetch("http://localhost:5000/FetchDataset?per_page=1000");
+        const response = await fetch("http://localhost:5000/FetchDataset?per_page=0");
         const result = await response.json();
         const end = performance.now();
         const duration = end - start;
