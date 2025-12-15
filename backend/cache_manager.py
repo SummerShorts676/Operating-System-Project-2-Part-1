@@ -160,8 +160,16 @@ class CacheManager:
         return None
     
     def get_file_hash(self, filepath: str) -> Optional[str]:
-        """Get the cached file hash."""
-        return self.get(f"file_hash:{filepath}")
+        """Get the cached file hash (stored as plain string, not JSON)."""
+        if not self.is_connected():
+            return None
+        
+        try:
+            value = self.redis_client.get(f"file_hash:{filepath}")
+            return value  # Already decoded as string due to decode_responses=True
+        except Exception as e:
+            logger.error(f"Error getting file hash: {e}")
+            return None
     
     def set_file_hash(self, filepath: str, file_hash: str) -> bool:
         """Set the file hash (no expiry for file tracking)."""

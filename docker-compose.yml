@@ -48,13 +48,14 @@ services:
     build:
       context: ./my-app
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://20.220.33.127:5000
     container_name: diet-nextjs-app
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://backend:5000
     depends_on:
       - backend
     healthcheck:

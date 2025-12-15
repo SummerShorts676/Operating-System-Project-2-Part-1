@@ -239,7 +239,8 @@ export default function Page() {
     async function FetchDataset() {
       try {
         const start = performance.now();
-        const response = await fetch("http://localhost:5000/FetchDataset");
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const response = await fetch(`${apiUrl}/FetchDataset`);
         const result = await response.json();
         const end = performance.now();
         const duration = end - start;
