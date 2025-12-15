@@ -239,8 +239,8 @@ export default function Page() {
     async function FetchDataset() {
       try {
         const start = performance.now();
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        const response = await fetch(`${apiUrl}/FetchDataset`);
+        // Use local Next.js API route instead of external Flask backend
+        const response = await fetch('/api/dataset');
         const result = await response.json();
         const end = performance.now();
         const duration = end - start;
