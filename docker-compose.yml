@@ -43,21 +43,19 @@ services:
       retries: 3
       start_period: 40s
 
-  # Next.js frontend application
+  # Next.js frontend application (now self-contained with API)
   frontend:
     build:
       context: ./my-app
       dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=http://20.220.33.127:5000
     container_name: diet-nextjs-app
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-    depends_on:
-      - backend
+    volumes:
+      - ./backend/data:/app/backend/data:ro
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
       interval: 30s
