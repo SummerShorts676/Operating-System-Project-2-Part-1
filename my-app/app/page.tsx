@@ -54,6 +54,7 @@ export default function loginPage() {
         return;
       }
       setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
       setMessage('Login successful');
       router.push('/protected');
     } catch (error: any) {

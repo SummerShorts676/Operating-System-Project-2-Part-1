@@ -37,7 +37,7 @@ export default function RegisterPage() {
       }
       // Success: redirect to login
       setMessage("Registration successful");
-      router.push("/login");
+      router.push("../");
     } catch (error) {
       console.error("Register error:", error);
       setMessage(error?.message || "Network error");
