@@ -8,7 +8,22 @@ let cachedStats: any | null = null;
 let lastStatsCalcTime: number | null = null;
 const CACHE_DURATION = 3600000; // 1 hour in milliseconds
 
-const CSV_FILE_PATH = path.join(process.cwd(), '..', 'backend', 'data', 'All_Diets.csv');
+// Check multiple possible paths for the CSV file
+const possiblePaths = [
+  '/app/backend/data/All_Diets.csv',  // Docker volume mount
+  path.join(process.cwd(), '..', 'backend', 'data', 'All_Diets.csv'),  // Local development
+];
+
+function findCSVPath(): string {
+  for (const csvPath of possiblePaths) {
+    if (fs.existsSync(csvPath)) {
+      return csvPath;
+    }
+  }
+  throw new Error('CSV file not found in any expected location');
+}
+
+let CSV_FILE_PATH: string;
 
 interface DietRecord {
   Recipe_name: string;
@@ -21,6 +36,11 @@ interface DietRecord {
 }
 
 function loadAndCleanData(): DietRecord[] {
+  // Initialize CSV path on first call
+  if (!CSV_FILE_PATH) {
+    CSV_FILE_PATH = findCSVPath();
+  }
+  
   const fileContent = fs.readFileSync(CSV_FILE_PATH, 'utf-8');
   const parseResult = Papa.parse(fileContent, {
     header: true,
@@ -182,6 +202,11 @@ function calculateStatistics(data: DietRecord[]) {
 
 export async function GET() {
   try {
+    // Initialize CSV path on first call
+    if (!CSV_FILE_PATH) {
+      CSV_FILE_PATH = findCSVPath();
+    }
+    
     // Check cache
     const now = Date.now();
     if (cachedStats && lastStatsCalcTime && (now - lastStatsCalcTime) < CACHE_DURATION) {

@@ -7,7 +7,22 @@ import Papa from 'papaparse';
 let cachedData: any[] | null = null;
 let lastFileModTime: number | null = null;
 
-const CSV_FILE_PATH = path.join(process.cwd(), '..', 'backend', 'data', 'All_Diets.csv');
+// Check multiple possible paths for the CSV file
+const possiblePaths = [
+  '/app/backend/data/All_Diets.csv',  // Docker volume mount
+  path.join(process.cwd(), '..', 'backend', 'data', 'All_Diets.csv'),  // Local development
+];
+
+function findCSVPath(): string {
+  for (const csvPath of possiblePaths) {
+    if (fs.existsSync(csvPath)) {
+      return csvPath;
+    }
+  }
+  throw new Error('CSV file not found in any expected location');
+}
+
+let CSV_FILE_PATH: string;
 
 interface DietRecord {
   Recipe_name: string;
@@ -65,6 +80,11 @@ function cleanDataset(rawData: any[]): DietRecord[] {
 
 function loadData(): DietRecord[] {
   try {
+    // Initialize CSV path on first call
+    if (!CSV_FILE_PATH) {
+      CSV_FILE_PATH = findCSVPath();
+    }
+    
     // Check if file exists
     if (!fs.existsSync(CSV_FILE_PATH)) {
       throw new Error('CSV file not found');
